@@ -32,9 +32,14 @@
         target    = null
 
     function tip(vis) {
+      console.log('vis', vis);
+      // console.log('tip():this():', this);
+      console.log('tip():arguments:', arguments);
+      // svg = getSVGNode.call(arguments[0], vis)
       svg = getSVGNode(vis)
       point = svg.createSVGPoint()
-      document.body.appendChild(node)
+      svg.parentNode.appendChild(node)
+      console.log('node', node);
     }
 
     // Public - show the tooltip on the screen
@@ -47,21 +52,27 @@
       var content = html.apply(this, args),
           poffset = offset.apply(this, args),
           dir     = direction.apply(this, args),
-          nodel   = getNodeEl(),
+          nodel   = d3.select(node),
           i       = directions.length,
           coords,
           scrollTop  = document.documentElement.scrollTop || document.body.scrollTop,
           scrollLeft = document.documentElement.scrollLeft || document.body.scrollLeft
 
+      // nodel.html(content)
+        // .style({ opacity: 1, 'pointer-events': 'all' })
       nodel.html(content)
-        .style({ opacity: 1, 'pointer-events': 'all' })
+        .style('opacity', 1)
+        .style('pointer-events', 'all');
 
       while(i--) nodel.classed(directions[i], false)
       coords = direction_callbacks.get(dir).apply(this)
-      nodel.classed(dir, true).style({
-        top: (coords.top +  poffset[0]) + scrollTop + 'px',
-        left: (coords.left + poffset[1]) + scrollLeft + 'px'
-      })
+      nodel.classed(dir, true)
+        .style('top', (coords.top +  poffset[0]) + scrollTop + 'px')
+        .style('left', (coords.left + poffset[1]) + scrollLeft + 'px');
+      // nodel.classed(dir, true).style({
+      //   top: (coords.top +  poffset[0]) + scrollTop + 'px',
+      //   left: (coords.left + poffset[1]) + scrollLeft + 'px'
+      // })
 
       return tip
     }
@@ -70,9 +81,21 @@
     //
     // Returns a tip
     tip.hide = function() {
-      var nodel = getNodeEl()
-      nodel.style({ opacity: 0, 'pointer-events': 'none' })
+      var nodel = d3.select(node)
+      // nodel.style({ opacity: 0, 'pointer-events': 'none' })
+      nodel.style('opacity', 0)
+        .style('pointer-events', 'none');
       return tip
+    }
+
+    tip.functor = function(v) {
+      if(typeof v === 'function') {
+        return v;
+      } else {
+        return function() {
+          v;
+        }
+      }
     }
 
     // Public: Proxy attr calls to the d3 tip container.  Sets or gets attribute value.
@@ -83,10 +106,10 @@
     // Returns tip or attribute value
     tip.attr = function(n, v) {
       if (arguments.length < 2 && typeof n === 'string') {
-        return getNodeEl().attr(n)
+        return d3.select(node).attr(n)
       } else {
         var args =  Array.prototype.slice.call(arguments)
-        d3.selection.prototype.attr.apply(getNodeEl(), args)
+        d3.selection.prototype.attr.apply(d3.select(node), args)
       }
 
       return tip
@@ -100,10 +123,10 @@
     // Returns tip or style property value
     tip.style = function(n, v) {
       if (arguments.length < 2 && typeof n === 'string') {
-        return getNodeEl().style(n)
+        return d3.select(node).style(n)
       } else {
         var args =  Array.prototype.slice.call(arguments)
-        d3.selection.prototype.style.apply(getNodeEl(), args)
+        d3.selection.prototype.style.apply(d3.select(node), args)
       }
 
       return tip
@@ -117,7 +140,7 @@
     // Returns tip or direction
     tip.direction = function(v) {
       if (!arguments.length) return direction
-      direction = v == null ? v : d3.functor(v)
+      direction = v == null ? v : tip.functor(v)
 
       return tip
     }
@@ -129,7 +152,7 @@
     // Returns offset or
     tip.offset = function(v) {
       if (!arguments.length) return offset
-      offset = v == null ? v : d3.functor(v)
+      offset = v == null ? v : tip.functor(v)
 
       return tip
     }
@@ -141,20 +164,9 @@
     // Returns html value or tip
     tip.html = function(v) {
       if (!arguments.length) return html
-      html = v == null ? v : d3.functor(v)
+      html = v == null ? v : tip.functor(v)
 
       return tip
-    }
-
-    // Public: destroys the tooltip and removes it from the DOM
-    //
-    // Returns a tip
-    tip.destroy = function() {
-      if(node) {
-        getNodeEl().remove();
-        node = null;
-      }
-      return tip;
     }
 
     function d3_tip_direction() { return 'n' }
@@ -240,32 +252,30 @@
 
     function initNode() {
       var node = d3.select(document.createElement('div'))
-      node.style({
-        position: 'absolute',
-        top: 0,
-        opacity: 0,
-        'pointer-events': 'none',
-        'box-sizing': 'border-box'
-      })
+      node.style('position', 'absolute')
+        .style('top', 0)
+        .style('opacity', 0)
+        .style('pointer-events', 'none')
+        .style('box-sizing', 'border-box')
+      // node.style({
+      //   position: 'absolute',
+      //   top: 0,
+      //   opacity: 0,
+      //   'pointer-events': 'none',
+      //   'box-sizing': 'border-box'
+      // })
 
       return node.node()
     }
 
     function getSVGNode(el) {
       el = el.node()
+      console.log('el', el, 'el.tagName',
+        el.tagName, 'el.ownerSVGElement', el.ownerSVGElement);
       if(el.tagName.toLowerCase() === 'svg')
         return el
 
       return el.ownerSVGElement
-    }
-
-    function getNodeEl() {
-      if(node === null) {
-        node = initNode();
-        // re-add node to DOM
-        document.body.appendChild(node);
-      };
-      return d3.select(node);
     }
 
     // Private - gets the screen coordinates of a shape
