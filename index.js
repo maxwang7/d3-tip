@@ -9,11 +9,17 @@
     define(['d3'], factory)
   } else if (typeof module === 'object' && module.exports) {
     // CommonJS
-    module.exports = function(d3) {
-      d3.tip = factory(d3)
-      return d3.tip
-    }
+    console.log('CommonJS');
+    // module.exports = function(d3) {
+    //   d3.tip = factory(d3)
+    //   return d3.tip
+    // }
+    d3.tip = factory(d3);
+    // console.log('d3.tip', d3.tip);
+    // console.log('d3.tip()', d3.tip());
+    module.exports = d3.tip;
   } else {
+    console.log('browser global');
     // Browser global.
     root.d3.tip = factory(root.d3)
   }
@@ -32,14 +38,12 @@
         target    = null
 
     function tip(vis) {
-      console.log('vis', vis);
-      // console.log('tip():this():', this);
-      console.log('tip():arguments:', arguments);
+      console.log('d3tip:index.js:tip(vis)', vis);
       // svg = getSVGNode.call(arguments[0], vis)
       svg = getSVGNode(vis)
+      console.log('svg', svg);
       point = svg.createSVGPoint()
       svg.parentNode.appendChild(node)
-      console.log('node', node);
     }
 
     // Public - show the tooltip on the screen
@@ -269,12 +273,20 @@
     }
 
     function getSVGNode(el) {
+      var svg = document.createElement('div');
+      console.log('svg', svg);
+      console.log('HTMLDivElement', HTMLDivElement);
+      console.log('SVGPathElement', SVGPathElement);
       el = el.node()
-      console.log('el', el, 'el.tagName',
-        el.tagName, 'el.ownerSVGElement', el.ownerSVGElement);
-      if(el.tagName.toLowerCase() === 'svg')
+      console.log(el);
+      console.log(el.node);
+      if(el.tagName.toLowerCase() === 'svg') {
+        console.log('returning el', el);
         return el
+      }
 
+      console.log('el', el);
+      console.log('returning el.ownerSVGElement', el.ownerSVGElement);
       return el.ownerSVGElement
     }
 
